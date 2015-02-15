@@ -133,7 +133,7 @@ def run(*apps):
                 control.execute(mount_command[1:], program=mount_command[0])
             control.execute([], program=app['COMMAND'])
             host.source.savestate()
-        except Exception as e:
+        except Exception:
             machine.cli.manage.setExtraData(
                 host.name, 'GUI/Seamless', 'off')
             host.state.powerOff()

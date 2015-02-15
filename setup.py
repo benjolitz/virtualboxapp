@@ -20,7 +20,8 @@ setup(
     # http://packaging.python.org/en/latest/tutorial.html#version
     version='0.0.1',
 
-    description='Tool for setup/run/teardown of seamless-mode single applications',
+    description='Tool for setup/run/teardown of \
+seamless-mode single applications',
     long_description=long_description,
 
     # The project's main homepage.
