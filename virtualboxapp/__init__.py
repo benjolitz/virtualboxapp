@@ -64,7 +64,7 @@ def wait_for_guest_additions(host):
     state = int(host.source.info['GuestAdditionsRunLevel'])
     while state < 3 or time.time() - t_s > 60:
         state = int(host.source.info['GuestAdditionsRunLevel'])
-        time.sleep(0.1)
+        time.sleep(0.01)
     return state == 3
 
 
@@ -94,7 +94,6 @@ def run(*apps):
             if not wait_for_guest_additions(host):
                 host.state.powerOff()
                 continue
-            time.sleep(1.5)
             host.source.savestate()
         machine.cli.manage.setExtraData(
             host.name, 'GUI/Seamless', 'on')
