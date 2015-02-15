@@ -2,6 +2,8 @@ import json
 from collections import namedtuple
 import os.path
 import vbox
+import time
+import shlex
 
 SharedFolder = namedtuple(
     'SharedFolder', ('share_name', 'path', 'mount_point',))
@@ -47,9 +49,79 @@ APP_REQUIRED_KEYS = frozenset([
 ])
 
 
+def wait_for_guest_additions(host):
+    t_s = time.time()
+    state = int(host.source.info['GuestAdditionsRunLevel'])
+    while state < 3 or time.time() - t_s > 60:
+        state = int(host.source.info['GuestAdditionsRunLevel'])
+        time.sleep(0.1)
+    return state < 3
+
+
+def setup_virtual_folders(host, folders):
+    current_folders = dict(
+        (x.name.lower(), x) for x in host.shared.listRegistered())
+    for folder in folders:
+        if folder.share_name.lower() in current_folders:
+            if folder.path == current_folders[folder.share_name].path:
+                continue
+            current_folders[folder.share_name].remove()
+        host.shared.set(folder.share_name, folder.path)
+
+
 def run(*apps):
     for app in apps:
-        print(app)
+        machine = app['vbox']
+        host = app['MACHINE_NAME']
+        if host.state.isRunning:
+            continue
+        if not host.state.isSaved():
+            host.state.start()
+            if not wait_for_guest_additions(host):
+                host.state.powerOff()
+                continue
+            time.sleep(1.5)
+            host.source.savestate()
+
+        if app['FOLDERS']:
+            setup_virtual_folders(host, app['FOLDERS'])
+
+        machine.cli.manage.setExtraData(
+            host.name, 'GUI/Seamless', 'on')
+        host.state.start()
+        wait_for_guest_additions(host)
+        if 'controller' not in app:
+            app['controller'] = \
+                host.guest.control(
+                    app['GUEST_USERNAME'], app['GUEST_PASSWORD'])
+        control = app['controller']
+        for folder in app['FOLDERS']:
+            test_command = shlex.split(
+                app['TEST_IF_MOUNTED']['COMMAND'].format(
+                    mount_point=folder.mount_point,
+                    share_name=folder.share_name))
+            mount_command = shlex.split(
+                app['MOUNT_SHARE_COMMAND'].format(
+                    mount_point=folder.mount_point,
+                    share_name=folder.share_name))
+            unmount_command = shlex.split(
+                app['UNMOUNT_SHARE_COMMAND'].format(
+                    mount_point=folder.mount_point,
+                    share_name=folder.share_name))
+            try:
+                result = control.execute(
+                    test_command[1:], program=test_command[0])
+                if app['TEST_IF_MOUNTED']['FALSE_RESULT_TYPE'].lower() \
+                        != 'exception':
+                    pass
+            except vbox.api.exceptions.ExecuteError as e:
+                print(str(e))
+            else:
+                control.execute(
+                    unmount_command[1:], program=unmount_command[0])
+            control.execute(mount_command[1:], program=mount_command[0])
+        control.execute([], program=app['COMMAND'])
+        host.source.savestate()
 
 
 def verify_apps(manager, *iterable):
@@ -85,7 +157,7 @@ def main():
     import optparse
     parser = optparse.OptionParser()
     _, json_applications = parser.parse_args()
-    run(*[app for app in verify_apps(vbox.VBox(), json_applications)])
+    run(*[app for app in verify_apps(vbox.VBox(), *json_applications)])
 
 if __name__ == "__main__":
     main()
