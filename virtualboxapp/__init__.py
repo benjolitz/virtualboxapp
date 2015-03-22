@@ -1,9 +1,21 @@
+'''
+A way to run a specially configured VirtualBox machine with a specific command
+'''
 import json
 from collections import namedtuple
 import os.path
 import vbox
 import time
 import shlex
+
+__author__ = "Ben Jolitz"
+__copyright__ = "Copyright 2015, Ben Jolitz"
+__credits__ = []
+__license__ = "BSD"
+__version__ = "0.0.1"
+__maintainer__ = "Ben Jolitz"
+__email__ = "ben.jolitz+virtualboxapp@gmail.com"
+__status__ = "Alpha"
 
 SharedFolder = namedtuple(
     'SharedFolder', ('share_name', 'path', 'mount_point',))

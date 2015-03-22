@@ -25,7 +25,7 @@ seamless-mode single applications',
     long_description=long_description,
 
     # The project's main homepage.
-    url='https://bitbucket.org/benjolitz/virtualboxapp',
+    url='https://github.com/benjolitz/virtualboxapp',
 
     # Author details
     author='Ben Jolitz',
@@ -65,8 +65,6 @@ seamless-mode single applications',
     packages=find_packages(exclude=['contrib', 'docs', 'tests*']),
 
     install_requires=['vbox==0.2.5', 'six'],
-    package_dir={'aerospike': 'aerospike'},
-    package_data={'aerospike': ['*.h']},
     dependency_links=[
         'git+ssh://git@github.com/benjolitz/vbox.git#egg=vbox-0.2.5',
     ],
