@@ -9,16 +9,20 @@ SharedFolder = namedtuple(
     'SharedFolder', ('share_name', 'path', 'mount_point',))
 SharedFolders = namedtuple('SharedFolders', ['folders', 'mount_command'])
 SHARED_FOLDER_REQUIRED_KEYS = frozenset(['share_name', 'path', 'mount_point'])
+unicode_type = type(u'')
 
-def byteify(input):
-    if isinstance(input, dict):
-        return {byteify(key):byteify(value) for key,value in input.iteritems()}
-    elif isinstance(input, list):
-        return [byteify(element) for element in input]
-    elif isinstance(input, unicode):
-        return input.encode('utf-8')
-    else:
-        return input
+
+def byteify(item):
+    if isinstance(item, dict):
+        return {
+            byteify(key): byteify(value) for key, value
+            in item.iteritems()}
+    elif isinstance(item, list):
+        return [byteify(element) for element in item]
+    elif isinstance(item, unicode_type):
+        return item.encode('utf-8')
+    return item
+
 
 def parse_shared_folders(config, folder_key):
     folders = config[folder_key]
@@ -85,19 +89,19 @@ def run(*apps):
         host = app['MACHINE_NAME']
         if host.state.isRunning():
             continue
-        if not host.state.isSaved():
-            machine.cli.manage.setExtraData(
-                host.name, 'GUI/Seamless', 'off')
-            if app['FOLDERS']:
-                setup_virtual_folders(host, app['FOLDERS'])
-            host.state.start()
-            if not wait_for_guest_additions(host):
-                host.state.powerOff()
-                continue
-            host.source.savestate()
-        machine.cli.manage.setExtraData(
-            host.name, 'GUI/Seamless', 'on')
         try:
+            if not host.state.isSaved():
+                machine.cli.manage.setExtraData(
+                    host.name, 'GUI/Seamless', 'off')
+                if app['FOLDERS']:
+                    setup_virtual_folders(host, app['FOLDERS'])
+                host.state.start()
+                if not wait_for_guest_additions(host):
+                    host.state.powerOff()
+                    continue
+                host.source.savestate()
+            machine.cli.manage.setExtraData(
+                host.name, 'GUI/Seamless', 'on')
             host.state.start()
             wait_for_guest_additions(host)
             if 'controller' not in app:
@@ -118,12 +122,12 @@ def run(*apps):
                         mount_point=folder.mount_point,
                         share_name=folder.share_name))
                 try:
-                    result = control.execute(
+                    control.execute(
                         test_command[1:], program=test_command[0])
                     if app['TEST_IF_MOUNTED']['FALSE_RESULT_TYPE'].lower() \
                             != 'exception':
                         pass
-                except vbox.api.exceptions.ExecuteError as e:
+                except vbox.api.exceptions.ExecuteError:
                     pass
                 else:
                     control.execute(
@@ -132,11 +136,16 @@ def run(*apps):
                 control.execute(mount_command[1:], program=mount_command[0])
             control.execute([], program=app['COMMAND'])
             host.source.savestate()
-        except Exception:
+        except (KeyboardInterrupt, SystemExit):
             machine.cli.manage.setExtraData(
                 host.name, 'GUI/Seamless', 'off')
             host.state.powerOff()
-            print("Fault!")
+            raise SystemExit
+        except Exception as e:
+            machine.cli.manage.setExtraData(
+                host.name, 'GUI/Seamless', 'off')
+            host.state.powerOff()
+            print("Uncaught Exception ({0})!".format(e))
             raise
 
 
