@@ -64,9 +64,9 @@ seamless-mode single applications',
     # simple. Or you can use find_packages().
     packages=find_packages(exclude=['contrib', 'docs', 'tests*']),
 
-    install_requires=['vbox==0.2.5', 'six'],
+    install_requires=['vbox==9.9.9', 'six'],
     dependency_links=[
-        'git+https://git@github.com/benjolitz/vbox.git#egg=vbox-0.2.5',
+        'git+https://github.com/benjolitz/vbox.git#egg=vbox-9.9.9',
     ],
 
     # To provide executable scripts, use entry points in preference to the
