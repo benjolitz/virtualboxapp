@@ -91,7 +91,7 @@ def setup_virtual_folders(host, folders):
         if folder.share_name.lower() in current_folders:
             if folder.path == current_folders[folder.share_name.lower()].path:
                 continue
-            current_folders[folder.share_name].remove()
+            current_folders[folder.share_name.lower()].remove()
         host.shared.set(folder.share_name, folder.path)
 
 
