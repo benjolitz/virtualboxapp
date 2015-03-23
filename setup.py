@@ -66,7 +66,7 @@ seamless-mode single applications',
 
     install_requires=['vbox==0.2.5', 'six'],
     dependency_links=[
-        'git+ssh://git@github.com/benjolitz/vbox.git#egg=vbox-0.2.5',
+        'git+https://git@github.com/benjolitz/vbox.git#egg=vbox-0.2.5',
     ],
 
     # To provide executable scripts, use entry points in preference to the
