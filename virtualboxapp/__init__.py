@@ -7,6 +7,10 @@ import os.path
 import vbox
 import time
 import shlex
+import logging
+
+logger = logging.getLogger('virtualboxapp')
+logger.addHandler(logging.NullHandler())
 
 __author__ = "Ben Jolitz"
 __copyright__ = "Copyright 2015, Ben Jolitz"
@@ -135,7 +139,7 @@ def run(*apps):
                         share_name=folder.share_name))
                 try:
                     control.execute(
-                        test_command[1:], program=test_command[0])
+                        test_command, program=test_command[0])
                     if app['TEST_IF_MOUNTED']['FALSE_RESULT_TYPE'].lower() \
                             != 'exception':
                         pass
@@ -143,9 +147,9 @@ def run(*apps):
                     pass
                 else:
                     control.execute(
-                        unmount_command[1:], program=unmount_command[0])
+                        unmount_command, program=unmount_command[0])
                 time.sleep(2)
-                control.execute(mount_command[1:], program=mount_command[0])
+                control.execute(mount_command, program=mount_command[0])
             control.execute([], program=app['COMMAND'])
             host.source.savestate()
         except (KeyboardInterrupt, SystemExit):
@@ -154,10 +158,13 @@ def run(*apps):
             host.state.powerOff()
             raise SystemExit
         except Exception as e:
+            logger.exception("Uncaught Exception ({0})!".format(e))
             machine.cli.manage.setExtraData(
                 host.name, 'GUI/Seamless', 'off')
-            host.state.powerOff()
-            print("Uncaught Exception ({0})!".format(e))
+            if host.state.val == 'running':
+                try: host.state.powerOff()
+                except Exception as e:
+                    logger.exception('Unable to halt')
             raise
 
 
@@ -194,6 +201,14 @@ def main():
     import optparse
     parser = optparse.OptionParser()
     _, json_applications = parser.parse_args()
+    handler = logging.StreamHandler()
+    logger.addHandler(handler)
+    logger.setLevel(logging.DEBUG)
+    logger.addHandler(handler)
+
+    vbox_logger = logging.getLogger('vbox')
+    vbox_logger.setLevel(logging.DEBUG)
+    vbox_logger.addHandler(handler)
     run(*[app for app in verify_apps(vbox.VBox(), *json_applications)])
 
 if __name__ == "__main__":
