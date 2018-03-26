@@ -162,7 +162,8 @@ def run(*apps):
             machine.cli.manage.setExtraData(
                 host.name, 'GUI/Seamless', 'off')
             if host.state.val == 'running':
-                try: host.state.powerOff()
+                try:
+                    host.state.powerOff()
                 except Exception as e:
                     logger.exception('Unable to halt')
             raise
@@ -195,21 +196,3 @@ def verify_apps(manager, *iterable):
                         app_config[app_key.key] = app_key.parse_function(
                             app_config, app_key.key)
             yield app_config
-
-
-def main():
-    import optparse
-    parser = optparse.OptionParser()
-    _, json_applications = parser.parse_args()
-    handler = logging.StreamHandler()
-    logger.addHandler(handler)
-    logger.setLevel(logging.DEBUG)
-    logger.addHandler(handler)
-
-    vbox_logger = logging.getLogger('vbox')
-    vbox_logger.setLevel(logging.DEBUG)
-    vbox_logger.addHandler(handler)
-    run(*[app for app in verify_apps(vbox.VBox(), *json_applications)])
-
-if __name__ == "__main__":
-    main()
